@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Defenders</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.15), inset 0 0 50px rgba(0, 0, 0, 0.8);
+            width: 800px;
+            height: 600px;
+            border: 2px solid #333;
+        }
+
+        canvas {
+            background-color: #000;
+            image-rendering: pixelated;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.6;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .hud-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,20,0,0.8), transparent);
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0, 0 0 10px #0f0; 
+        }
+
+        .home-btn {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #444;
+            color: #ccc;
+            width: 40px;
+            height: 40px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px #444;
+        }
+        .home-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: #333;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .coin-display {
+            display: flex;
+            align-items: center;
+            color: #b300ff;
+            text-shadow: 0 0 5px #b300ff, 0 0 10px #b300ff;
+            font-weight: bold;
+        }
+        .coin-icon {
+            width: 14px;
+            height: 14px;
+            background: #b300ff;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            border: 2px solid #e080ff;
+            box-shadow: 0 0 8px #b300ff;
+        }
+
+        .screen {
+            background: rgba(10, 15, 10, 0.95);
+            padding: 40px;
+            border: 2px solid #0f0;
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4), inset 0 0 20px rgba(0, 50, 0, 0.5);
+            min-width: 300px;
+            z-index: 30;
+            max-height: 550px;
+            backdrop-filter: blur(5px);
+        }
+
+        #toast {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(50, 0, 0, 0.9);
+            color: #f55;
+            padding: 10px 20px;
+            border: 1px solid #f00;
+            font-weight: bold;
+            box-shadow: 0 0 15px #f00;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #toast.success {
+            background: rgba(0, 50, 0, 0.9);
+            color: #5f5;
+            border-color: #0f0;
+            box-shadow: 0 0 15px #0f0;
+        }
+
+        #confirm-modal {
+            z-index: 100;
+            background: rgba(10, 10, 10, 0.98);
+            border: 2px solid #fff;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Admin Modal */
+        #admin-modal {
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #444;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+        
+        #admin-input {
+            background: #111;
+            border: 1px solid #444;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #boss-hud {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            display: none;
+            text-align: center;
+        }
+        
+        #boss-bar-container {
+            width: 100%;
+            height: 20px;
+            border: 2px solid #f00;
+            background: #200;
+        }
+        
+        #boss-hp-bar {
+            width: 100%;
+            height: 100%;
+            background: #f00;
+            transition: width 0.2s;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            color: #0f0;
+            font-size: 48px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px #003300, 0 0 15px #0f0;
+        }
+
+        h2 {
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.1s;
+            display: block;
+            width: 100%;
+        }
+
+        button.primary-btn {
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 15px 40px;
+            font-size: 24px;
+            margin-top: 10px;
+            box-shadow: 0 0 5px #0f0;
+        }
+        button.primary-btn:hover {
+            background: #0f0;
+            color: #000;
+            box-shadow: 0 0 20px #0f0;
+        }
+
+        button.secondary-btn {
+            background: #000;
+            color: #b300ff;
+            border: 2px solid #b300ff;
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 15px;
+            box-shadow: 0 0 5px #b300ff;
+        }
+        button.secondary-btn:hover {
+            background: #b300ff;
+            color: #fff;
+            box-shadow: 0 0 15px #b300ff;
+        }
+        
+        button.quest-btn {
+            background: #000;
+            color: #ffaa00;
+            border: 2px solid #ffaa00;
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 15px;
+            box-shadow: 0 0 5px #ffaa00;
+        }
+        button.quest-btn:hover {
+            background: #ffaa00;
+            color: #000;
+            box-shadow: 0 0 15px #ffaa00;
+        }
+
+        button.danger-btn {
+            background: #000;
+            color: #f00;
+            border: 2px solid #f00;
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 10px;
+            width: 45%;
+            display: inline-block;
+            box-shadow: 0 0 5px #f00;
+        }
+        button.danger-btn:hover { background: #f00; color: #000; box-shadow: 0 0 15px #f00; }
+        
+        button.confirm-btn {
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 10px;
+            width: 45%;
+            display: inline-block;
+            box-shadow: 0 0 5px #0f0;
+        }
+        button.confirm-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+
+        /* Screens */
+        #shop-screen, #gear-screen, #quest-screen {
+            width: 700px;
+            height: 500px;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mode-option {
+            border: 1px solid #444;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(20,20,20,0.5);
+        }
+        .mode-option:hover { background: #222; border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .mode-option.selected { border-color: #0f0; background: #0a2a0a; }
+
+        .scroll-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            border: 1px solid #333;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .shop-item {
+            border: 1px solid #444;
+            padding: 10px;
+            background: #111;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 170px;
+        }
+        .shop-item:hover { background: #222; border-color: #888; box-shadow: 0 0 10px #444; }
+        .shop-item.selected { border-color: #0f0; box-shadow: 0 0 15px #0f0; }
+        .shop-item.locked { opacity: 0.6; filter: grayscale(0.8); }
+
+        .quest-item {
+            border: 1px solid #444;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #111;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .quest-item.completed { border-color: #0f0; opacity: 0.5; }
+        .quest-item.can-claim { border-color: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
+
+        .ship-preview {
+            width: 40px;
+            height: 30px;
+            margin: 10px 0;
+        }
+        .ship-name { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .ship-ability { font-size: 10px; color: #aaa; margin-bottom: 5px; height: 30px; text-align: center;}
+        .price-tag { font-size: 14px; color: #b300ff; font-weight: bold; text-shadow: 0 0 5px #b300ff; }
+        .owned-tag { font-size: 12px; color: #0f0; text-shadow: 0 0 5px #0f0; }
+        .quest-reward { color: #ffaa00; font-size: 12px; }
+
+        .hidden { display: none !important; }
+        
+        /* Code Button */
+        .code-btn {
+            background: #111;
+            color: #666;
+            border: 1px solid #444;
+            font-size: 12px;
+            padding: 5px;
+            margin-top: 10px;
+            width: 100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .code-btn:hover { border-color: #fff; color: #fff; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="scanlines"></div>
+    
+    <div id="toast">Not Enough Coins!</div>
+
+    <div class="ui-overlay">
+        <div class="hud-bar">
+            <div class="home-btn" id="home-btn" onclick="game.goHome()" title="Main Menu">⌂</div>
+            <div class="hud-stats" id="ingame-hud" style="display: none;">
+                <div id="score-display">SCORE: 0</div>
+                <div id="lives-display">LIVES: 3</div>
+                <div id="wave-display">WAVE: 1</div>
+                <div id="hp-display" style="color: #ff5555; display: block;">HP: 5</div>
+                <div id="gear-display" style="color: #ffaa00; font-size: 16px; display: flex; gap: 10px;"></div>
+                <div id="ammo-display" style="color: #ffaa00; display: none;">AMMO: 100</div>
+                <div class="coin-display">
+                    <div class="coin-icon"></div>
+                    <span id="hud-coins">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOSS HUD -->
+        <div id="boss-hud">
+            <div style="color:#f00; font-weight:bold; margin-bottom:5px; text-shadow: 0 0 10px #f00;">GALACTIC DREADNOUGHT</div>
+            <div id="boss-bar-container">
+                <div id="boss-hp-bar"></div>
+            </div>
+        </div>
+
+        <!-- START SCREEN -->
+        <div id="start-screen" class="screen">
+            <h1>Cosmic<br>Defenders</h1>
+            
+            <!-- Active Buffs -->
+            <div id="active-gear" style="color: #aaa; font-size: 12px; margin-bottom: 20px; min-height: 20px;"></div>
+
+            <button class="primary-btn" onclick="game.showModeSelect()">Deploy</button>
+            
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="secondary-btn" onclick="game.openShop()">Hangar</button>
+                <button class="secondary-btn" style="border-color: #e080ff; color: #e080ff;" onclick="game.openGear()">Depot</button>
+            </div>
+            <button class="quest-btn" onclick="game.openQuests()">Mission Logs</button>
+            <button class="code-btn" onclick="game.openAdmin()">Codes</button>
+        </div>
+
+        <!-- MODE SELECT -->
+        <div id="mode-screen" class="screen hidden">
+            <h2>Select Difficulty</h2>
+            <div class="mode-option" onclick="game.start('NORMAL')">
+                <h3 style="color: #0f0; margin:0;">Normal Mode</h3>
+                <div style="font-size: 12px; color: #888;">Standard Rules. Infinite Ammo.</div>
+            </div>
+            <div class="mode-option" onclick="game.start('HARD')">
+                <h3 style="color: #ffaa00; margin:0;">Hard Mode</h3>
+                <div style="font-size: 12px; color: #888;">Limited Ammo. High Tech ships cost more.</div>
+            </div>
+            <div class="mode-option" onclick="game.start('IMPOSSIBLE')">
+                <h3 style="color: #f00; margin:0;">IMPOSSIBLE</h3>
+                <div style="font-size: 12px; color: #888;">1 Life. No Gear. Strict Ammo (1:1).</div>
+            </div>
+            <button class="secondary-btn" onclick="game.goHome()" style="border-color: #fff; color: #fff;">Back</button>
+        </div>
+
+        <!-- SHIP SHOP -->
+        <div id="shop-screen" class="screen hidden">
+            <h2 style="color: #b300ff;">Galactic Hangar</h2>
+            <div class="coin-display" style="justify-content: center; margin-bottom: 10px;">
+                <div class="coin-icon"></div><span id="shop-coins">0</span>
+            </div>
+            <div class="scroll-list">
+                <div class="shop-grid" id="shop-grid"></div>
+            </div>
+            <button class="secondary-btn" onclick="game.closeShop()" style="border-color: #fff; color: #fff;">Back</button>
+        </div>
+
+        <!-- GEAR SHOP -->
+        <div id="gear-screen" class="screen hidden">
+            <h2 style="color: #e080ff;">Supply Depot</h2>
+            <div class="coin-display" style="justify-content: center; margin-bottom: 10px;">
+                <div class="coin-icon"></div><span id="gear-coins">0</span>
+            </div>
+            
+            <div class="scroll-list" id="gear-list">
+                <!-- Items -->
+            </div>
+
+            <button class="secondary-btn" onclick="game.closeShop()" style="border-color: #fff; color: #fff;">Back</button>
+        </div>
+
+        <!-- QUEST SCREEN -->
+        <div id="quest-screen" class="screen hidden">
+            <h2 style="color: #ffaa00;">Mission Logs</h2>
+            <div class="scroll-list" id="quest-list"></div>
+            <button class="secondary-btn" onclick="game.closeShop()" style="border-color: #fff; color: #fff;">Back</button>
+        </div>
+
+        <!-- CONFIRM MODAL -->
+        <div id="confirm-modal" class="screen hidden">
+            <h2>Confirm Purchase</h2>
+            <p id="confirm-msg">Are you sure?</p>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="danger-btn" onclick="game.cancelPurchase()">No</button>
+                <button class="confirm-btn" onclick="game.confirmPurchase()">Yes</button>
+            </div>
+        </div>
+
+        <!-- ADMIN MODAL -->
+        <div id="admin-modal" class="screen hidden">
+            <h2 style="color: #aaa;">Access Terminal</h2>
+            <input type="text" id="admin-input" placeholder="Enter Command Code..." autocomplete="off">
+            <button class="primary-btn" onclick="game.submitAdminCode()">Execute</button>
+            <button class="secondary-btn" style="border-color: #444; color:#888;" onclick="game.closeAdmin()">Close</button>
+        </div>
+
+        <!-- GAME OVER -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1 style="color: #f00; border-color: #f00; text-shadow: 0 0 20px #f00;">GAME OVER</h1>
+            <p>FINAL SCORE: <span id="final-score" style="color: #fff">0</span></p>
+            <p style="font-size: 14px; color: #b300ff;">Earned <span id="earned-coins">0</span> Galaxy Coins</p>
+            <button class="primary-btn" onclick="game.showModeSelect()" style="border-color: #f00; color:#f00;">Retry</button>
+            <button class="secondary-btn" onclick="game.goHome()" style="border-color: #aaa; color:#aaa;">Main Menu</button>
+        </div>
+        
+        <!-- WIN WAVE -->
+        <div id="win-screen" class="screen hidden">
+            <h1 style="text-shadow: 0 0 20px #fff;" id="win-title">WAVE CLEARED</h1>
+            <div id="campaign-win" style="display: none; font-size: 16px; color: #ffaa00;">
+                CAMPAIGN COMPLETE!<br>
+                Rewards: 500 Coins + Gear<br>
+                <span id="ship-unlock-msg" style="color: #0f0;">UNLOCKED: NEBULA VENGEANCE</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Game Data ---
+    const SHIP_TYPES = [
+        { id: 0, name: "Mk-I Standard", cost: 0, color: '#0f0', ability: "Balanced.", speed: 5, fireRate: 20, bulletType: 'standard', lives: 3, ammoCost: 1 },
+        { id: 1, name: "Velocity Wing", cost: 5, color: '#0ff', ability: "High Speed.", speed: 9, fireRate: 18, bulletType: 'standard', lives: 3, ammoCost: 1 },
+        { id: 2, name: "Twin-Fire", cost: 15, color: '#ff0', ability: "Double Shot.", speed: 5, fireRate: 25, bulletType: 'dual', lives: 3, ammoCost: 1 },
+        { id: 3, name: "Iron Clad", cost: 30, color: '#888', ability: "5 Lives.", speed: 3.5, fireRate: 22, bulletType: 'heavy', lives: 5, ammoCost: 1 },
+        { id: 5, name: "Vector-Z", cost: 75, color: '#ff8800', ability: "Free Flight (WASD).", speed: 7, fireRate: 15, bulletType: 'standard', lives: 3, vertical: true, ammoCost: 1 },
+        { id: 4, name: "Nova Blaster", cost: 150, color: '#f0f', ability: "Spread Shot.", speed: 6, fireRate: 20, bulletType: 'spread', lives: 3, ammoCost: 3 }, // Nerfed
+        { id: 99, name: "Omega-X", cost: 999999, color: '#fff', ability: "Void Beam.", speed: 6, fireRate: 40, bulletType: 'laser', lives: 4, ammoCost: 2 }, // Nerfed
+        { id: 100, name: "Nebula Vengeance", cost: 999999, color: '#5500aa', ability: "Homing Missiles.", speed: 6, fireRate: 25, bulletType: 'homing', lives: 3, ammoCost: 1 } 
+    ];
+
+    const QUESTS = [
+        { id: 1, desc: "Score 5,000 Points Total", type: 'score', target: 5000, reward: {type: 'coin', amt: 5} },
+        { id: 2, desc: "Reach Wave 3", type: 'wave', target: 3, reward: {type: 'coin', amt: 10} },
+        { id: 3, desc: "Own 2 Different Ships", type: 'own_ship', target: 2, reward: {type: 'gear', item: 'life', amt: 1} },
+        { id: 4, desc: "Defeat 200 Aliens Total", type: 'kills', target: 200, reward: {type: 'coin', amt: 20} },
+        { id: 5, desc: "Score 20,000 Points Total", type: 'score', target: 20000, reward: {type: 'gear', item: 'shield', amt: 1} },
+        { id: 6, desc: "Reach Wave 10", type: 'wave', target: 10, reward: {type: 'coin', amt: 50} },
+        { id: 7, desc: "Defeat 1000 Aliens Total", type: 'kills', target: 1000, reward: {type: 'gear', item: 'ammo', amt: 2} },
+        { id: 8, desc: "Own 5 Ships", type: 'own_ship', target: 5, reward: {type: 'coin', amt: 100} },
+        { id: 9, desc: "Score 100,000 Points Total", type: 'score', target: 100000, reward: {type: 'coin', amt: 200} },
+        { id: 10, desc: "Complete Quest 9", type: 'quest_cnt', target: 9, reward: {type: 'ship', id: 99} } 
+    ];
+
+    const GEAR_ITEMS = [
+        { id: 'life', name: "Extra Life", cost: 1, desc: "+1 Life", max: 3 },
+        { id: 'shield', name: "Energy Shield", cost: 5, desc: "Absorbs 3 Hits", max: 10 },
+        { id: 'ammo', name: "Ammo Crate", cost: 2, desc: "+5 Start Ammo (Hard Mode)", max: 10 },
+        { id: 'bomb', name: "Nova Bomb", cost: 5, desc: "[E] Destroy 4 Enemies", max: 5 },
+        { id: 'emp', name: "EMP Pulse", cost: 10, desc: "[Q] Destroy Lasers", max: 1 }
+    ];
+
+    // --- Audio ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const actx = new AudioContext();
+
+    const sfx = {
+        play: (freq, type, len, vol=0.1) => {
+            if(actx.state === 'suspended') actx.resume();
+            const o = actx.createOscillator();
+            const g = actx.createGain();
+            o.type = type;
+            o.frequency.setValueAtTime(freq, actx.currentTime);
+            g.gain.setValueAtTime(vol, actx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + len);
+            o.connect(g);
+            g.connect(actx.destination);
+            o.start();
+            o.stop(actx.currentTime + len);
+        },
+        shoot: () => sfx.play(800, 'square', 0.1),
+        laser: () => sfx.play(1200, 'sawtooth', 0.3, 0.2),
+        explosion: () => sfx.play(100, 'sawtooth', 0.3, 0.3),
+        buy: () => sfx.play(1500, 'sine', 0.2, 0.2),
+        error: () => sfx.play(150, 'square', 0.2, 0.2),
+        toast: () => sfx.play(1000, 'sine', 0.1, 0.1),
+        shieldHit: () => sfx.play(600, 'sine', 0.1, 0.2),
+        crash: () => sfx.play(50, 'sawtooth', 0.5, 0.4),
+        bomb: () => sfx.play(50, 'square', 1.0, 0.5),
+        emp: () => sfx.play(2000, 'sawtooth', 0.5, 0.2),
+        boss_beam: () => sfx.play(100, 'sawtooth', 1.0, 0.3)
+    };
+
+    // --- Engine ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    class Bullet {
+        constructor(x, y, dy, color, type) {
+            this.x = x;
+            this.y = y;
+            this.dy = dy;
+            this.color = color;
+            this.type = type;
+            this.marked = false;
+            this.w = 4; this.h = 10;
+            this.vx = 0;
+            this.life = 300; 
+            
+            if (type === 'laser') { this.w = 6; this.h = 40; this.pierce = true; }
+            if (type === 'heavy') { this.w = 8; this.h = 15; }
+            if (type === 'curving') { this.vx = 0; this.w = 6; this.h = 6; }
+            if (type === 'bomb') { this.w = 10; this.h = 10; }
+            if (type === 'homing') { this.w = 6; this.h = 6; }
+            if (type === 'player_bomb') { this.w = 12; this.h = 12; }
+            if (type === 'boss_laser') { this.w = 30; this.h = 100; }
+        }
+        update(player, enemies) {
+            this.y += this.dy;
+            this.x += this.vx;
+            this.life--;
+            if(this.life <= 0) this.marked = true;
+
+            if (this.type === 'curving' && player) {
+                if (player.x > this.x) this.vx += 0.1;
+                else this.vx -= 0.1;
+                if (this.vx > 2) this.vx = 2;
+                if (this.vx < -2) this.vx = -2;
+            }
+
+            if (this.type === 'homing' && enemies && enemies.length > 0) {
+                let target = enemies[0];
+                let minDist = 9999;
+                enemies.forEach(e => {
+                    let d = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (d < minDist) { minDist = d; target = e; }
+                });
+                if (target) {
+                    let angle = Math.atan2(target.y - this.y, target.x - this.x);
+                    this.vx = Math.cos(angle) * 6;
+                    this.dy = Math.sin(angle) * 6;
+                }
+            }
+
+            if (this.y < -200 || this.y > canvas.height + 50) this.marked = true;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            if (this.type === 'bomb' || this.type === 'player_bomb') {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.w/2, 0, Math.PI*2); ctx.fill();
+            } else {
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
+        }
+    }
+
+    class Boss {
+        constructor() {
+            this.w = 200;
+            this.h = 100;
+            this.x = canvas.width/2 - 100;
+            this.y = -120;
+            this.active = false;
+            this.hp = 100;
+            this.maxHp = 100;
+            this.state = 'enter'; // enter, fight
+            this.dir = 1;
+            this.timer = 0;
+        }
+
+        update(game) {
+            if (this.state === 'enter') {
+                this.y += 2;
+                if (this.y > 50) {
+                    this.y = 50;
+                    this.state = 'fight';
+                    this.active = true;
+                    document.getElementById('boss-hud').style.display = 'block';
+                }
+            } else if (this.state === 'fight') {
+                this.x += 2 * this.dir;
+                if (this.x < 20 || this.x > canvas.width - 220) this.dir *= -1;
+                
+                this.timer++;
+                
+                // Giant Laser Attack
+                if (this.timer % 120 === 0) {
+                    sfx.boss_beam();
+                    game.bullets.push(new Bullet(this.x + this.w/2 - 15, this.y + 80, 8, '#f00', 'boss_laser'));
+                }
+
+                // Spawn Minions
+                if (this.timer % 300 === 0) {
+                    for(let i=0; i<3; i++) {
+                        game.aliens.push(new Alien(
+                            this.x + 50 + i*40,
+                            this.y + 120,
+                            (i%2)+1,
+                            'normal'
+                        ));
+                    }
+                }
+            }
+        }
+
+        draw() {
+            // Boss Shape
+            ctx.fillStyle = '#400';
+            ctx.fillRect(this.x, this.y, this.w, this.h);
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(this.x+20, this.y+20, 160, 60); // Core
+            ctx.fillStyle = '#f80';
+            ctx.fillRect(this.x+80, this.y+80, 40, 20); // Cannon
+            
+            // Update Bar
+            document.getElementById('boss-hp-bar').style.width = (this.hp/this.maxHp * 100) + '%';
+        }
+    }
+
+    class Player {
+        constructor(config, gear, mode) {
+            this.w = 40; this.h = 20;
+            this.x = canvas.width/2 - 20;
+            this.y = canvas.height - 50;
+            this.cfg = config;
+            this.mode = mode;
+            
+            this.hpMax = 5;
+            this.hp = 5;
+
+            if (mode === 'IMPOSSIBLE') {
+                this.lives = 1;
+                this.shield = 0;
+                this.bombs = 0;
+                this.emp = 0;
+            } else {
+                this.lives = config.lives + (gear.life || 0);
+                this.shield = (gear.shield || 0) * 3; 
+                this.bombs = gear.bomb || 0;
+                this.emp = gear.emp || 0;
+            }
+            
+            this.shieldMax = this.shield;
+            this.cooldown = 0;
+        }
+
+        update(input, game) {
+            let speed = this.cfg.speed;
+            if (input.keys.ArrowLeft || input.keys.KeyA) this.x -= speed;
+            if (input.keys.ArrowRight || input.keys.KeyD) this.x += speed;
+            
+            if (this.cfg.vertical) {
+                if (input.keys.ArrowUp || input.keys.KeyW) this.y -= speed;
+                if (input.keys.ArrowDown || input.keys.KeyS) this.y += speed;
+                if (this.y < 50) this.y = 50;
+                if (this.y > canvas.height - this.h) this.y = canvas.height - this.h;
+            }
+
+            if (this.x < 0) this.x = 0;
+            if (this.x > canvas.width - this.w) this.x = canvas.width - this.w;
+
+            // Gear Actions
+            if (input.keys.KeyQ && this.emp > 0) {
+                game.activateEMP();
+                this.emp--;
+                input.keys.KeyQ = false; // prevent spam
+            }
+            if (input.keys.KeyE && this.bombs > 0) {
+                game.bullets.push(new Bullet(this.x+this.w/2, this.y, -8, '#f80', 'player_bomb'));
+                sfx.shoot();
+                this.bombs--;
+                input.keys.KeyE = false;
+            }
+
+            if (this.cooldown > 0) this.cooldown--;
+            if (input.keys.Space && this.cooldown <= 0) {
+                let cost = (this.mode === 'HARD' || this.mode === 'IMPOSSIBLE') ? this.cfg.ammoCost : 0;
+                let actualCost = cost;
+                let downgrade = false;
+
+                if ((this.mode === 'HARD' || this.mode === 'IMPOSSIBLE')) {
+                    if (game.ammo < cost) {
+                        if (game.ammo >= 1) {
+                            downgrade = true;
+                            actualCost = 1;
+                        } else {
+                            return; // Completely out of ammo
+                        }
+                    }
+                }
+                
+                this.fire(game, downgrade);
+                if (this.mode === 'HARD' || this.mode === 'IMPOSSIBLE') game.ammo -= actualCost;
+            }
+        }
+
+        fire(game, downgrade) {
+            const cx = this.x + this.w/2 - 2;
+            const y = this.y;
+            
+            // If downgraded, use standard bullet properties
+            const t = downgrade ? 'standard' : this.cfg.bulletType;
+            const c = downgrade ? '#0f0' : this.cfg.color;
+
+            if (t === 'dual') {
+                game.bullets.push(new Bullet(this.x, y, -7, c, t));
+                game.bullets.push(new Bullet(this.x+this.w-4, y, -7, c, t));
+            } else if (t === 'spread') {
+                game.bullets.push(new Bullet(cx, y, -8, c, t));
+                let l = new Bullet(cx, y, -7, c, t); l.vx = -2;
+                let r = new Bullet(cx, y, -7, c, t); r.vx = 2;
+                game.bullets.push(l, r);
+            } else if (t === 'laser') {
+                game.bullets.push(new Bullet(cx-1, y, -12, '#fff', t));
+                sfx.laser();
+                this.cooldown = this.cfg.fireRate;
+                return;
+            } else if (t === 'homing') {
+                game.bullets.push(new Bullet(cx, y, -5, '#a0f', t));
+            } else {
+                game.bullets.push(new Bullet(cx, y, -7, c, t));
+            }
+            sfx.shoot();
+            this.cooldown = this.cfg.fireRate;
+        }
+
+        draw() {
+            ctx.fillStyle = this.cfg.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = this.cfg.color;
+            
+            if (this.cfg.id === 2) { 
+                ctx.fillRect(this.x, this.y+10, 10, 10);
+                ctx.fillRect(this.x+30, this.y+10, 10, 10);
+                ctx.fillRect(this.x+10, this.y+15, 20, 5);
+                ctx.fillRect(this.x, this.y, 5, 10);
+                ctx.fillRect(this.x+35, this.y, 5, 10);
+            } 
+            else if (this.cfg.id === 3) { 
+                ctx.fillRect(this.x, this.y+5, 40, 15);
+                ctx.fillRect(this.x+15, this.y-5, 10, 10); 
+            }
+            else if (this.cfg.id === 5) { 
+                 ctx.beginPath(); ctx.moveTo(this.x+20, this.y); 
+                 ctx.lineTo(this.x+40, this.y+20); ctx.lineTo(this.x+20, this.y+15); 
+                 ctx.lineTo(this.x, this.y+20); ctx.fill();
+            }
+            else if (this.cfg.id === 4) { 
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y+20); ctx.lineTo(this.x+10, this.y+10);
+                ctx.lineTo(this.x, this.y); ctx.lineTo(this.x+20, this.y+5);
+                ctx.lineTo(this.x+40, this.y); ctx.lineTo(this.x+30, this.y+10);
+                ctx.lineTo(this.x+40, this.y+20); ctx.lineTo(this.x+20, this.y+15);
+                ctx.fill();
+            }
+            else if (this.cfg.id === 99) { 
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+40, this.y+20);
+                ctx.lineTo(this.x+20, this.y+10);
+                ctx.lineTo(this.x, this.y+20); ctx.lineTo(this.x+40, this.y);
+                ctx.fill();
+            }
+            else if (this.cfg.id === 100) {
+                ctx.fillStyle = '#aa00ff';
+                ctx.fillRect(this.x + 10, this.y, 20, 20);
+                ctx.fillRect(this.x, this.y + 10, 10, 15);
+                ctx.fillRect(this.x + 30, this.y + 10, 10, 15);
+            }
+            else { 
+                ctx.fillRect(this.x+15, this.y, 10, 5);
+                ctx.fillRect(this.x+5, this.y+5, 30, 5);
+                ctx.fillRect(this.x, this.y+10, 40, 10);
+            }
+            
+            if (this.shield > 0) {
+                ctx.strokeStyle = `rgba(0, 100, 255, ${this.shield/this.shieldMax + 0.2})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x + this.w/2, this.y + this.h/2, 30, 0, Math.PI*2);
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    class Alien {
+        constructor(x, y, type, behavior='normal') {
+            this.x = x;
+            this.y = y;
+            this.w = 30;
+            this.h = 20;
+            this.type = type;
+            this.behavior = behavior;
+            this.timer = 0;
+        }
+
+        update(player, game) {
+            this.timer++;
+        }
+
+        draw(frameCount) {
+            const frame = Math.floor(frameCount / 30) % 2;
+            
+            if (this.behavior === 'curver') ctx.fillStyle = '#0ff';
+            else if (this.behavior === 'tracker') ctx.fillStyle = '#a0f';
+            else if (this.behavior === 'bomber') ctx.fillStyle = '#f00';
+            else ctx.fillStyle = this.type === 1 ? '#f0f' : (this.type === 2 ? '#0ff' : '#ff0');
+            
+            if (this.behavior === 'bomber') {
+                ctx.fillRect(this.x, this.y, 30, 15);
+                ctx.fillRect(this.x+10, this.y+15, 10, 5);
+            } else {
+                if (this.type === 1) { 
+                    ctx.fillRect(this.x + 5, this.y, 20, 15);
+                    if(frame) { ctx.fillRect(this.x, this.y + 15, 5, 5); ctx.fillRect(this.x + 25, this.y + 15, 5, 5); }
+                    else { ctx.fillRect(this.x + 10, this.y + 15, 10, 5); }
+                } else { 
+                    ctx.fillRect(this.x + 2, this.y + 5, 26, 10); ctx.fillRect(this.x + 8, this.y, 14, 5);
+                    if(frame) { ctx.fillRect(this.x, this.y, 5, 5); ctx.fillRect(this.x + 25, this.y, 5, 5); }
+                    else { ctx.fillRect(this.x, this.y + 15, 5, 5); ctx.fillRect(this.x + 25, this.y + 15, 5, 5); }
+                }
+            }
+        }
+    }
+
+    class Game {
+        constructor() {
+            const def = { 
+                coins: 0, unlocked: [0], curShip: 0, 
+                gear: { life: 0, shield: 0, ammo: 0, bomb: 0, emp: 0 },
+                stats: { score: 0, kills: 0, maxWave: 0 },
+                quests: [] 
+            };
+            const saved = JSON.parse(localStorage.getItem('cosmicV6')) || def; 
+            
+            this.data = saved;
+            this.applyLegacyFixes();
+            
+            this.state = 'MENU';
+            this.input = { keys: {} };
+            this.stars = [];
+            this.initStars();
+            this.empTimer = 0;
+            this.boss = null;
+
+            window.addEventListener('keydown', e => this.input.keys[e.code] = true);
+            window.addEventListener('keyup', e => this.input.keys[e.code] = false);
+
+            this.uiUpdate();
+        }
+
+        initStars() {
+            this.stars = [];
+            for(let i=0; i<100; i++) {
+                this.stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: Math.random() * 2 });
+            }
+        }
+
+        drawStars() {
+            ctx.fillStyle = '#fff';
+            this.stars.forEach(s => {
+                ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+                ctx.fillRect(s.x, s.y, s.s, s.s);
+            });
+            ctx.globalAlpha = 1.0;
+        }
+
+        applyLegacyFixes() {
+            if (!this.data.gear) this.data.gear = { life: 0, shield: 0, ammo: 0, bomb: 0, emp: 0 };
+            if (!this.data.gear.bomb) this.data.gear.bomb = 0;
+            if (!this.data.gear.emp) this.data.gear.emp = 0;
+            if (!this.data.stats) this.data.stats = { score: 0, kills: 0, maxWave: 0 };
+            if (!this.data.quests) this.data.quests = [];
+        }
+
+        save() {
+            localStorage.setItem('cosmicV6', JSON.stringify(this.data));
+            this.uiUpdate();
+        }
+
+        uiUpdate() {
+            ['shop','gear','hud'].forEach(id => {
+                const el = document.getElementById(id+'-coins');
+                if(el) el.innerText = this.data.coins;
+            });
+
+            let txt = [];
+            if (this.data.gear.life > 0) txt.push(`+${this.data.gear.life} Lives`);
+            if (this.data.gear.shield > 0) txt.push(`${this.data.gear.shield} Shields`);
+            if (this.data.gear.ammo > 0) txt.push(`+${this.data.gear.ammo * 5} Ammo`);
+            document.getElementById('active-gear').innerText = txt.length ? "ACTIVE: " + txt.join(', ') : "";
+        }
+
+        toast(msg, success=false) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.className = success ? 'success' : '';
+            t.style.opacity = 1;
+            sfx.toast();
+            setTimeout(() => t.style.opacity = 0, 2000);
+        }
+
+        // --- Navigation ---
+
+        goHome() {
+            this.state = 'MENU';
+            document.querySelectorAll('.screen').forEach(e => e.classList.add('hidden'));
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('ingame-hud').style.display = 'none';
+            document.getElementById('home-btn').style.display = 'none';
+            document.getElementById('boss-hud').style.display = 'none';
+            this.boss = null;
+            this.save();
+        }
+
+        showModeSelect() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('mode-screen').classList.remove('hidden');
+        }
+
+        openShop() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('shop-screen').classList.remove('hidden');
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+            
+            SHIP_TYPES.forEach(s => {
+                const unl = this.data.unlocked.includes(s.id);
+                const sel = this.data.curShip === s.id;
+                const div = document.createElement('div');
+                div.className = `shop-item ${sel ? 'selected' : ''} ${!unl ? 'locked' : ''}`;
+                div.innerHTML = `
+                    <div class="ship-preview" style="background:${s.color};box-shadow:0 0 10px ${s.color}"></div>
+                    <div class="ship-name">${s.name}</div>
+                    <div class="ship-ability">${s.ability}</div>
+                    ${unl ? (sel?'<div class="owned-tag">EQUIPPED</div>':'<div class="owned-tag">OWNED</div>') : (s.cost > 50000 ? '<div class="quest-reward">REWARD</div>' : `<div class="price-tag">${s.cost}</div>`)}
+                `;
+                div.onclick = () => this.tryBuyShip(s);
+                grid.appendChild(div);
+            });
+        }
+
+        openGear() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('gear-screen').classList.remove('hidden');
+            const list = document.getElementById('gear-list');
+            list.innerHTML = '';
+
+            GEAR_ITEMS.forEach(g => {
+                const count = this.data.gear[g.id] || 0;
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.style.height = 'auto'; div.style.flexDirection = 'row';
+                div.innerHTML = `
+                    <div style="text-align:left">
+                        <div class="ship-name">${g.name}</div>
+                        <div class="ship-ability">${g.desc}</div>
+                        <div style="color:#888;font-size:12px">Held: ${count}/${g.max}</div>
+                    </div>
+                    <div>
+                        <div class="price-tag" style="text-align:right;margin-bottom:5px">${g.cost}</div>
+                        <button class="secondary-btn" style="margin:0;padding:5px 15px;font-size:12px" onclick="game.tryBuyGear('${g.id}')">Buy</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        openQuests() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quest-screen').classList.remove('hidden');
+            this.checkQuests(); 
+            const list = document.getElementById('quest-list');
+            list.innerHTML = '';
+
+            QUESTS.forEach(q => {
+                const done = this.data.quests.includes(q.id);
+                let prog = ""; 
+                if (q.type === 'score') prog = `(${Math.min(this.data.stats.score, q.target)}/${q.target})`;
+                if (q.type === 'kills') prog = `(${Math.min(this.data.stats.kills, q.target)}/${q.target})`;
+                
+                let rewardTxt = q.reward.type === 'coin' ? `${q.reward.amt} Coins` : (q.reward.type === 'ship' ? 'Omega-X Ship' : `${q.reward.item} Gear`);
+
+                const div = document.createElement('div');
+                div.className = `quest-item ${done ? 'completed' : ''}`;
+                div.innerHTML = `
+                    <div>
+                        <div class="ship-name" style="margin:0">${q.desc} <span style="color:#888;font-size:10px">${prog}</span></div>
+                        <div style="font-size:10px;color:#aaa">Reward: ${rewardTxt}</div>
+                    </div>
+                    ${done ? '<div style="color:#0f0">✔</div>' : '<div style="color:#444">Locked</div>'}
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        openAdmin() {
+            document.getElementById('admin-modal').classList.remove('hidden');
+            document.getElementById('admin-input').value = '';
+            document.getElementById('admin-input').focus();
+        }
+
+        closeAdmin() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        submitAdminCode() {
+            const input = document.getElementById('admin-input').value.trim();
+            const coinRegex = /^coin\s+(-?\d+)\s+xgyt7z6r$/;
+            const coinMatch = input.match(coinRegex);
+            const questRegex = /^quest\s+(\d+)\s+xgyt7z6r$/;
+            const questMatch = input.match(questRegex);
+            const resetRegex = /^reset\s+xgyt7z6r$/;
+            const resetMatch = input.match(resetRegex);
+
+            if (resetMatch) {
+                localStorage.removeItem('cosmicV6');
+                location.reload();
+            } else if (coinMatch) {
+                const amount = parseInt(coinMatch[1]);
+                this.data.coins += amount;
+                this.save();
+                this.toast(amount > 0 ? "Funds Received" : "Funds Deducted", true);
+                sfx.buy();
+                this.closeAdmin();
+            } else if (questMatch) {
+                const count = parseInt(questMatch[1]);
+                let completedCount = 0;
+                QUESTS.forEach((q, index) => {
+                    if (index < count) {
+                        if (!this.data.quests.includes(q.id)) {
+                            this.data.quests.push(q.id);
+                            this.grantReward(q.reward);
+                            completedCount++;
+                        }
+                    }
+                });
+                this.save();
+                this.toast(`${completedCount} Quests Completed`, true);
+                sfx.buy();
+                this.closeAdmin();
+            } else {
+                this.toast("Invalid Code");
+                sfx.error();
+            }
+        }
+
+        closeShop() {
+            document.getElementById('shop-screen').classList.add('hidden');
+            document.getElementById('gear-screen').classList.add('hidden');
+            document.getElementById('quest-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        tryBuyShip(s) {
+            if (this.data.unlocked.includes(s.id)) {
+                this.data.curShip = s.id;
+                this.save();
+                this.openShop(); 
+                sfx.buy();
+            } else if (s.cost > 90000) {
+                this.toast("Complete Quest/Campaign!");
+                sfx.error();
+            } else {
+                this.confirm(`Buy ${s.name}?`, () => {
+                    if (this.data.coins >= s.cost) {
+                        this.data.coins -= s.cost;
+                        this.data.unlocked.push(s.id);
+                        this.data.curShip = s.id;
+                        this.save();
+                        this.openShop();
+                        sfx.buy();
+                    } else {
+                        this.toast("Not Enough Coins!");
+                        sfx.error();
+                    }
+                });
+            }
+        }
+
+        tryBuyGear(id) {
+            const item = GEAR_ITEMS.find(g => g.id === id);
+            if (this.data.gear[id] >= item.max) {
+                this.toast("Max Stock Reached");
+                sfx.error();
+                return;
+            }
+            // NO CONFIRMATION for gear
+            if (this.data.coins >= item.cost) {
+                this.data.coins -= item.cost;
+                this.data.gear[id]++;
+                this.save();
+                this.openGear();
+                sfx.buy();
+            } else {
+                this.toast("Not Enough Coins!");
+                sfx.error();
+            }
+        }
+
+        confirm(msg, cb) {
+            const m = document.getElementById('confirm-modal');
+            document.getElementById('confirm-msg').innerText = msg;
+            m.classList.remove('hidden');
+            this._confirmYes = () => { m.classList.add('hidden'); cb(); };
+            this._confirmNo = () => { m.classList.add('hidden'); sfx.buy(); };
+        }
+        confirmPurchase() { if(this._confirmYes) this._confirmYes(); }
+        cancelPurchase() { if(this._confirmNo) this._confirmNo(); }
+
+        // --- Game Loop ---
+
+        start(mode) {
+            this.mode = mode;
+            const ship = SHIP_TYPES.find(s => s.id === this.data.curShip);
+            
+            const g = this.data.gear;
+            this.player = new Player(ship, g, mode);
+            
+            // Clear Gear Stock (consumed)
+            this.data.gear = { life: 0, shield: 0, ammo: 0, bomb: 0, emp: 0 }; 
+            this.save();
+
+            this.aliens = [];
+            this.bullets = [];
+            this.particles = [];
+            this.score = 0;
+            this.coinBuffer = 0;
+            this.wave = 1;
+            this.runKills = 0;
+            this.frameCount = 0;
+            this.empTimer = 0;
+            this.boss = null;
+            
+            let bonusAmmo = (g.ammo || 0) * 5;
+            this.startWave(bonusAmmo);
+
+            document.querySelectorAll('.screen').forEach(e => e.classList.add('hidden'));
+            document.getElementById('ingame-hud').style.display = 'flex';
+            document.getElementById('home-btn').style.display = 'flex';
+            document.getElementById('ammo-display').style.display = (mode === 'HARD' || mode === 'IMPOSSIBLE') ? 'block' : 'none';
+            document.getElementById('win-title').innerText = "WAVE CLEARED";
+            document.getElementById('campaign-win').style.display = 'none';
+            document.getElementById('boss-hud').style.display = 'none';
+            
+            this.state = 'PLAYING';
+            this.loop();
+        }
+
+        activateEMP() {
+            this.empTimer = 180; // 3 seconds
+            sfx.emp();
+            // Immediate clear
+            this.bullets = this.bullets.filter(b => b.type !== 'enemy' && b.type !== 'curving' && b.type !== 'bomb');
+            this.toast("EMP ACTIVATED!", true);
+        }
+
+        startWave(bonusAmmo = 0) {
+            this.aliens = [];
+            this.bullets = [];
+            this.boss = null;
+            document.getElementById('boss-hud').style.display = 'none';
+            
+            const w = this.wave;
+            let rows = 4, cols = 8;
+            
+            if (w >= 5) { rows = 5; cols = 9; }
+            if (w >= 10) { rows = 6; cols = 10; }
+            if (w === 15) { rows = 4; cols = 8; } // Small start for boss wave
+
+            const pad = 15;
+            
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    let type = (r%2)+1;
+                    let behavior = 'normal';
+                    
+                    if (w >= 2 && r === 0 && c % 3 === 0) behavior = 'curver';
+                    if (w >= 5 && r === 1 && c % 4 === 0) behavior = 'tracker';
+                    if (w >= 8 && r === 0 && c % 5 === 0) behavior = 'bomber';
+                    if (w === 15) behavior = Math.random() > 0.7 ? 'bomber' : 'curver'; 
+
+                    this.aliens.push(new Alien(
+                        50 + c*(30+pad), 
+                        50 + r*(20+pad), 
+                        type,
+                        behavior
+                    ));
+                }
+            }
+            this.alienDir = 1;
+            this.alienSpeed = 0.5 + (w * 0.2);
+
+            const count = this.aliens.length;
+            if (this.mode === 'HARD') this.ammo = Math.ceil(count * 1.25) + bonusAmmo;
+            if (this.mode === 'IMPOSSIBLE') this.ammo = count; // 1:1
+            
+            document.getElementById('wave-display').innerText = `WAVE: ${w}`;
+        }
+
+        update() {
+            this.player.update(this.input, this);
+            
+            // EMP Logic
+            if (this.empTimer > 0) {
+                this.empTimer--;
+                this.bullets = this.bullets.filter(b => b.type !== 'enemy' && b.type !== 'curving' && b.type !== 'bomb' && b.type !== 'boss_laser');
+            }
+
+            // Display Gear
+            let gearTxt = "";
+            if(this.player.bombs > 0) gearTxt += ` [E]Bomb:${this.player.bombs}`;
+            if(this.player.emp > 0) gearTxt += ` [Q]EMP:${this.player.emp}`;
+            document.getElementById('gear-display').innerText = gearTxt;
+
+            document.getElementById('hp-display').innerText = `HP: ${this.player.hp}`;
+
+            // Boss Logic
+            if (this.wave === 15 && this.aliens.length === 0 && !this.boss) {
+                // Spawn Boss
+                this.boss = new Boss();
+            }
+
+            if (this.boss) {
+                this.boss.update(this);
+                // Check collisions on boss
+                if (this.rectCollide(this.player, this.boss)) this.hitPlayer(false, 5); // Touching boss hurts a lot
+            }
+
+            let drop = false;
+            let lowY = 0;
+            this.aliens.forEach(a => {
+                a.x += this.alienSpeed * this.alienDir;
+                if (a.x <= 0 || a.x + a.w >= canvas.width) drop = true;
+                if (a.y > lowY) lowY = a.y;
+                a.update(this.player, this);
+                
+                let rate = 0.001 * this.wave;
+                if (this.mode === 'IMPOSSIBLE') rate *= 1.5;
+                
+                if (this.empTimer <= 0 && Math.random() < rate) {
+                    let type = 'enemy';
+                    if (a.behavior === 'curver') type = 'curving';
+                    if (a.behavior === 'bomber') type = 'bomb';
+                    
+                    if (a.behavior === 'tracker') {
+                        if(Math.random() < 0.05) this.bullets.push(new Bullet(a.x+a.w/2, a.y+a.h, 6, '#a0f', 'homing'));
+                    } else {
+                        this.bullets.push(new Bullet(a.x+a.w/2, a.y+a.h, 4, '#ff0', type));
+                    }
+                }
+                
+                if (this.rectCollide(this.player, a)) this.hitPlayer();
+            });
+
+            if (drop) {
+                this.alienDir *= -1;
+                this.aliens.forEach(a => a.y += 20);
+            }
+
+            if (lowY >= canvas.height - 60) this.gameOver();
+
+            this.bullets.forEach(b => b.update(this.player, this.aliens));
+            
+            // Bullet Collisions
+            this.bullets = this.bullets.filter(b => {
+                if (b.marked) return false;
+
+                // Player Bullet
+                if (b.dy < 0) {
+                    // Check Aliens
+                    for(let i=this.aliens.length-1; i>=0; i--) {
+                        if (this.rectCollide(b, this.aliens[i])) {
+                            this.explode(this.aliens[i].x+15, this.aliens[i].y+10, '#fff');
+                            this.aliens.splice(i, 1);
+                            this.score += 100;
+                            this.coinBuffer += 100;
+                            this.runKills++;
+                            sfx.explosion();
+                            if (!b.pierce) return false; 
+                        }
+                    }
+                    // Check Boss
+                    if (this.boss && this.boss.active && this.rectCollide(b, this.boss)) {
+                        this.boss.hp--;
+                        this.explode(b.x, b.y, '#f00');
+                        if (this.boss.hp <= 0) this.winGame();
+                        if (!b.pierce) return false;
+                    }
+                } 
+                
+                // Player Bomb
+                if (b.type === 'player_bomb') {
+                    let hit = false;
+                    // Check aliens
+                    for(let i=this.aliens.length-1; i>=0; i--) {
+                        if (this.rectCollide(b, this.aliens[i])) {
+                            this.explode(b.x, b.y, '#f80');
+                            sfx.bomb();
+                            // Kill 4 nearest
+                            let targets = this.aliens.map((a, idx) => ({idx, dist: Math.hypot(a.x - b.x, a.y - b.y)})).sort((a,b) => a.dist - b.dist);
+                            let removed = [];
+                            for(let k=0; k<Math.min(4, targets.length); k++) removed.push(targets[k].idx);
+                            removed.sort((a,b) => b-a);
+                            removed.forEach(idx => {
+                                this.explode(this.aliens[idx].x, this.aliens[idx].y, '#fff');
+                                this.aliens.splice(idx, 1);
+                                this.score += 100; this.coinBuffer += 100; this.runKills++;
+                            });
+                            return false; 
+                        }
+                    }
+                    // Check Boss
+                    if (this.boss && this.boss.active && this.rectCollide(b, this.boss)) {
+                        this.boss.hp -= 5; // Bomb hurts boss more
+                        this.explode(b.x, b.y, '#f80');
+                        if(this.boss.hp <= 0) this.winGame();
+                        return false;
+                    }
+                }
+
+                // Enemy Bullet hitting Player
+                if (b.dy > 0) {
+                    if (this.rectCollide(b, this.player)) {
+                        if (b.type === 'bomb') this.hitPlayer(false, 2); 
+                        else if (b.type === 'boss_laser') this.hitPlayer(false, 3);
+                        else this.hitPlayer();
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (this.coinBuffer >= 1000) {
+                this.data.coins += 1;
+                this.coinBuffer -= 1000;
+                this.uiUpdate();
+            }
+
+            this.particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1;
+            });
+            this.particles = this.particles.filter(p => p.life > 0);
+
+            // Wave Clear (If not Wave 15 or if Wave 15 boss dead)
+            // Logic handled in winGame for wave 15
+            if (this.wave < 15 && this.aliens.length === 0) {
+                this.wave++;
+                this.data.stats.maxWave = Math.max(this.data.stats.maxWave, this.wave);
+                this.state = 'WIN_WAVE';
+                document.getElementById('win-screen').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('win-screen').classList.add('hidden');
+                    this.startWave();
+                    this.state = 'PLAYING';
+                }, 2000);
+            }
+
+            // HUD
+            document.getElementById('score-display').innerText = `SCORE: ${this.score}`;
+            document.getElementById('lives-display').innerText = `LIVES: ${this.player.lives}`;
+            if (this.mode === 'HARD' || this.mode === 'IMPOSSIBLE') document.getElementById('ammo-display').innerText = `AMMO: ${Math.floor(this.ammo)}`;
+        }
+
+        hitPlayer(instantKill = false, damage = 1) {
+            if (this.player.shield > 0 && !instantKill) {
+                this.player.shield--;
+                sfx.shieldHit();
+                return;
+            }
+
+            if (instantKill) {
+                this.player.lives = 0; 
+                sfx.bomb();
+            } else {
+                this.player.hp -= damage; 
+                if (this.player.hp > 0) {
+                    sfx.shieldHit(); 
+                    return;
+                }
+                
+                this.player.lives--;
+                this.player.hp = this.player.hpMax; 
+            }
+
+            sfx.explosion();
+            this.explode(this.player.x+20, this.player.y+10, '#f00');
+            this.bullets = []; 
+            
+            if (this.player.lives <= 0) this.gameOver();
+        }
+
+        rectCollide(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        }
+
+        explode(x, y, c) {
+            for(let i=0; i<10; i++) this.particles.push({x, y, vx:(Math.random()-.5)*5, vy:(Math.random()-.5)*5, life:1, c});
+        }
+
+        winGame() {
+            this.state = 'WIN_GAME';
+            // Huge Explosion
+            for(let i=0; i<50; i++) this.explode(this.boss.x + Math.random()*200, this.boss.y + Math.random()*100, '#f50');
+            sfx.bomb();
+            
+            document.getElementById('win-title').innerText = "CAMPAIGN VICTORY";
+            document.getElementById('campaign-win').style.display = 'block';
+            
+            this.data.coins += 500;
+            this.data.gear.life += 5;
+            
+            if (!this.data.unlocked.includes(100)) {
+                this.data.unlocked.push(100);
+                document.getElementById('ship-unlock-msg').style.display = 'block';
+            } else {
+                document.getElementById('ship-unlock-msg').style.display = 'none';
+            }
+            
+            this.save();
+            document.getElementById('win-screen').classList.remove('hidden');
+            
+            setTimeout(() => {
+                this.goHome();
+            }, 6000);
+        }
+
+        gameOver() {
+            this.state = 'GAMEOVER';
+            this.data.stats.score += this.score;
+            this.data.stats.kills += this.runKills;
+            this.checkQuests(); 
+            this.save();
+
+            document.getElementById('final-score').innerText = this.score;
+            document.getElementById('earned-coins').innerText = Math.floor(this.score / 1000);
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('ingame-hud').style.display = 'none';
+            document.getElementById('home-btn').style.display = 'none';
+            document.getElementById('boss-hud').style.display = 'none';
+        }
+
+        checkQuests() {
+            let newComplete = false;
+            const stats = this.data.stats;
+            const owned = this.data.unlocked.length;
+            
+            QUESTS.forEach(q => {
+                if (this.data.quests.includes(q.id)) return;
+                let pass = false;
+                if (q.type === 'score' && stats.score >= q.target) pass = true;
+                if (q.type === 'wave' && stats.maxWave >= q.target) pass = true;
+                if (q.type === 'kills' && stats.kills >= q.target) pass = true;
+                if (q.type === 'own_ship' && owned >= q.target) pass = true;
+                if (q.type === 'quest_cnt' && this.data.quests.length >= q.target) pass = true;
+
+                if (pass) {
+                    this.data.quests.push(q.id);
+                    this.grantReward(q.reward);
+                    this.toast("Quest Complete!", true);
+                    newComplete = true;
+                }
+            });
+            if (newComplete) this.save();
+        }
+
+        grantReward(r) {
+            if (r.type === 'coin') this.data.coins += r.amt;
+            if (r.type === 'gear') this.data.gear[r.item] += r.amt;
+            if (r.type === 'ship') {
+                if(!this.data.unlocked.includes(r.id)) this.data.unlocked.push(r.id);
+            }
+        }
+
+        loop() {
+            if (this.state === 'PLAYING') {
+                this.update();
+                this.frameCount++;
+            }
+            
+            // Always draw background and stars even if paused/transitioning
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            this.drawStars();
+
+            if (this.state !== 'MENU') {
+                if (this.player) this.player.draw();
+                if (this.boss && this.boss.active) this.boss.draw();
+                this.aliens.forEach(a => a.draw(this.frameCount));
+                this.bullets.forEach(b => b.draw());
+                this.particles.forEach(p => {
+                    ctx.globalAlpha=p.life; ctx.fillStyle=p.c; ctx.fillRect(p.x,p.y,3,3); ctx.globalAlpha=1;
+                });
+            }
+
+            if (this.state === 'PLAYING' || this.state === 'WIN_WAVE' || this.state === 'WIN_GAME') {
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+    }
+
+    const game = new Game();
+
+</script>
+</body>
+</html>
