@@ -5,100 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Retro Alien Shooter - Expanded</title>
     <style>
-        /* Retro Arcade Styling */
+        /* Base Retro Arcade Styling */
         body {
-            background-color: #111;
-            color: #0f0;
+            background-color: #050505; color: #0f0;
             font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            user-select: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 400px;
-            height: 600px;
-            background-color: #000;
-            border: 2px solid #0f0;
-            box-shadow: 0 0 15px #0f0;
-        }
-
-        canvas { display: block; }
-
-        /* UI Screens */
-        .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column;
+            margin: 0; overflow: hidden; display: flex;
             justify-content: center; align-items: center;
-            background: rgba(0, 0, 0, 0.9);
-            text-align: center; z-index: 20;
+            height: 100vh; user-select: none;
         }
-
+        #game-container {
+            position: relative; width: 400px; height: 600px;
+            background-color: #000; border: 2px solid #0f0; box-shadow: 0 0 15px #0f0;
+        }
+        canvas { display: block; }
+        
+        /* UI Overlays */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
+            background: rgba(0, 0, 0, 0.95); text-align: center; z-index: 20; box-sizing: border-box; padding: 20px;
+        }
+        .screen-center { justify-content: center; }
         .hidden { display: none !important; }
 
-        h1 { font-size: 32px; text-shadow: 0 0 10px #0f0; margin-bottom: 20px; }
-        h2 { font-size: 20px; text-shadow: 0 0 5px #0f0; margin-bottom: 10px; }
+        h1 { font-size: 32px; text-shadow: 0 0 10px #0f0; margin-bottom: 15px; margin-top: 0; }
+        h2 { font-size: 18px; text-shadow: 0 0 5px #0f0; margin-bottom: 10px; }
 
         button {
-            background: transparent; border: 2px solid #0f0; color: #0f0;
-            padding: 12px 24px; margin: 8px; font-size: 16px; font-family: inherit;
+            background: #111; border: 2px solid #0f0; color: #0f0;
+            padding: 10px 20px; margin: 6px; font-size: 14px; font-family: inherit;
             font-weight: bold; cursor: pointer; text-transform: uppercase;
-            transition: 0.2s; width: 220px;
+            transition: 0.2s; width: 100%; max-width: 250px;
         }
-
         button:hover:not(:disabled) { background: #0f0; color: #000; box-shadow: 0 0 10px #0f0; }
-        button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+        button:disabled { border-color: #444; color: #444; cursor: not-allowed; background: transparent; }
 
         /* HUD */
         #hud {
             position: absolute; top: 10px; left: 10px; right: 10px;
             display: flex; justify-content: space-between; align-items: flex-start;
-            font-size: 16px; font-weight: bold; text-shadow: 0 0 5px #0f0; z-index: 5;
-            pointer-events: none;
+            font-size: 14px; font-weight: bold; text-shadow: 0 0 5px #0f0; z-index: 5; pointer-events: none;
         }
-        
-        .hud-left, .hud-right { display: flex; flex-direction: column; }
+        .hud-left, .hud-right { display: flex; flex-direction: column; gap: 5px; }
         .hud-right { align-items: flex-end; }
         
-        #btn-quit {
-            pointer-events: auto; margin: 10px 0 0 0; padding: 5px 10px;
-            width: auto; font-size: 14px; border-color: #f00; color: #f00; text-shadow: none;
-        }
+        .hud-btn { pointer-events: auto; padding: 5px 10px; font-size: 12px; margin: 0; width: auto; }
+        #btn-quit { border-color: #f00; color: #f00; text-shadow: none; }
         #btn-quit:hover { background: #f00; color: #000; box-shadow: 0 0 10px #f00; }
+        #btn-autotoggle { border-color: #0ff; color: #0ff; }
 
-        /* Index Menu Styles */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { width: 120px; padding: 8px; }
+        /* Index/Garage Menus */
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; width: 100%; justify-content: center; }
+        .tab-btn { width: auto; padding: 8px 12px; font-size: 12px; }
         .tab-btn.active { background: #0f0; color: #000; }
         
-        .grid-container {
-            display: flex; gap: 15px; width: 90%; justify-content: center; flex-wrap: wrap;
+        #index-content {
+            flex-grow: 1; width: 100%; overflow-y: auto; display: flex;
+            flex-direction: column; align-items: center; gap: 10px;
         }
+        
+        /* Cards & Grids */
+        .grid-container { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; }
         .card {
-            border: 2px solid #0f0; padding: 15px; width: 100px;
-            display: flex; flex-direction: column; align-items: center; background: #111;
+            border: 1px solid #0f0; padding: 10px; width: 120px;
+            display: flex; flex-direction: column; align-items: center; background: #0a0a0a;
         }
-        .card.mystery .sprite { filter: brightness(0); }
+        .card.mystery .sprite { filter: brightness(0); } /* Used for enemies only now */
         .card.mystery .info { color: #555; }
-        
-        .sprite { width: 40px; height: 40px; margin-bottom: 10px; }
-        .info { font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
-        .card button { width: 90px; padding: 5px; font-size: 12px; margin: 0; }
+        .info { font-size: 11px; margin: 10px 0; line-height: 1.4; }
 
-        /* CSS Shapes for Index Sprites */
-        .sprite-ship0 { background: #0f0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-        .sprite-ship1 { background: #0ff; clip-path: polygon(50% 0%, 20% 100%, 80% 100%); }
-        .sprite-ship2 { background: #f0f; clip-path: polygon(50% 0%, 40% 100%, 60% 100%); }
-        
-        .sprite-enemy0 { background: #f00; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); }
-        .sprite-enemy1 { background: #08f; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); width: 50px;}
-        .sprite-enemy2 { background: #ff0; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); height: 30px;}
+        /* Ship Upgrade Garage styling */
+        .garage-panel { border: 1px solid #0f0; width: 100%; padding: 10px; box-sizing: border-box; text-align: left; }
+        .slot-container { display: flex; gap: 5px; margin-top: 10px; }
+        .slot { border: 1px dashed #0f0; padding: 5px; font-size: 10px; flex: 1; text-align: center; cursor: pointer; }
+        .slot:hover { background: rgba(0,255,0,0.2); }
+        .slot.locked { border-color: #444; color: #444; cursor: not-allowed; }
 
         /* Mobile Controls */
         #mobile-controls {
@@ -106,13 +87,11 @@
             display: flex; justify-content: space-between; box-sizing: border-box;
             padding: 0 20px; pointer-events: none; z-index: 10;
         }
-
         .control-group { pointer-events: auto; display: flex; gap: 10px; }
         .m-btn {
             width: 60px; height: 60px; border: 2px solid #0f0; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; color: #0f0;
-            font-size: 24px; background: rgba(0, 255, 0, 0.1); box-shadow: inset 0 0 10px #0f0;
-            touch-action: none;
+            display: flex; justify-content: center; align-items: center; color: #0f0; font-size: 24px;
+            background: rgba(0, 255, 0, 0.1); box-shadow: inset 0 0 10px #0f0; touch-action: none;
         }
         .m-btn:active { background: rgba(0, 255, 0, 0.4); box-shadow: inset 0 0 20px #0f0; }
     </style>
@@ -123,40 +102,43 @@
         <div id="hud" class="hidden">
             <div class="hud-left">
                 <div>SCORE: <span id="score">0</span></div>
+                <div>WAVE: <span id="wave-display">1</span></div>
+                <button id="btn-autotoggle" class="hud-btn hidden">AUTO: OFF</button>
             </div>
             <div class="hud-right">
                 <div>COINS: <span id="hud-coins">0</span></div>
-                <button id="btn-quit">QUIT</button>
+                <button id="btn-quit" class="hud-btn">QUIT</button>
             </div>
         </div>
 
         <canvas id="gameCanvas" width="400" height="600"></canvas>
 
-        <div id="main-menu" class="screen">
+        <div id="main-menu" class="screen screen-center">
             <h1>ALIEN<br>SHOOTER</h1>
             <h2 style="color: #ff0;">COINS: <span id="menu-coins">0</span></h2>
             <button id="btn-start">Start Game</button>
-            <button id="btn-index">Index & Shop</button>
+            <button id="btn-index">Garage & Index</button>
             <button id="btn-settings">Settings</button>
         </div>
 
         <div id="index-menu" class="screen hidden">
-            <h1>INDEX</h1>
+            <h1>GARAGE</h1>
             <div class="tabs">
                 <button id="tab-ships" class="tab-btn active">SHIPS</button>
+                <button id="tab-items" class="tab-btn">ITEMS</button>
                 <button id="tab-enemies" class="tab-btn">ENEMIES</button>
             </div>
-            <div id="index-content" class="grid-container"></div>
-            <button id="btn-back-index" style="margin-top: 20px;">Back to Menu</button>
+            <div id="index-content"></div>
+            <button id="btn-back-index" style="margin-top: auto;">Back to Menu</button>
         </div>
 
-        <div id="settings-menu" class="screen hidden">
+        <div id="settings-menu" class="screen screen-center hidden">
             <h1>SETTINGS</h1>
             <button id="btn-toggle-mobile">Mobile Mode: OFF</button>
             <button id="btn-back-settings">Back to Menu</button>
         </div>
 
-        <div id="game-over" class="screen hidden">
+        <div id="game-over" class="screen screen-center hidden">
             <h1 style="color: #f00; text-shadow: 0 0 10px #f00;">GAME OVER</h1>
             <h2>FINAL SCORE: <span id="go-score">0</span></h2>
             <button id="btn-restart">Play Again</button>
@@ -174,400 +156,6 @@
         </div>
     </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // --- Game Data & Progress ---
-        let pData = {
-            coins: 0,
-            scoreBank: 0, // 100 score = 1 coin
-            shipsOwned: [true, false, false],
-            currentShip: 0,
-            enemyKills: [0, 0, 0] // 0: Grunt, 1: Tank, 2: Speedster
-        };
-
-        const shipData = [
-            { name: "CLASSIC", price: 0, color: "#0f0", w: 40, h: 20, desc: "Standard single shot." },
-            { name: "SPREADER", price: 50, color: "#0ff", w: 30, h: 25, desc: "Fires 3 bullets." },
-            { name: "PIERCER", price: 150, color: "#f0f", w: 25, h: 30, desc: "Plasma beam passes<br>through enemies." }
-        ];
-
-        const enemyData = [
-            { name: "GRUNT", color: "#f00", hp: 1, w: 25, h: 20, speedMult: 1, score: 10 },
-            { name: "TANK", color: "#08f", hp: 3, w: 35, h: 25, speedMult: 0.6, score: 25 },
-            { name: "SPEEDY", color: "#ff0", hp: 1, w: 20, h: 15, speedMult: 1.8, score: 15 }
-        ];
-
-        // --- UI Elements ---
-        const screens = {
-            main: document.getElementById('main-menu'),
-            settings: document.getElementById('settings-menu'),
-            index: document.getElementById('index-menu'),
-            gameOver: document.getElementById('game-over')
-        };
-        const hud = document.getElementById('hud');
-        const mobileUI = document.getElementById('mobile-controls');
-        
-        // --- Game State Variables ---
-        let gameState = 'menu';
-        let isMobileMode = false;
-        let animationId;
-        let score = 0;
-        let wave = 1;
-
-        const keys = { left: false, right: false, fire: false };
-        let player = { x: 180, y: 550, speed: 5 };
-        let bullets = [];
-        let aliens = [];
-        
-        let lastShotTime = 0;
-        const fireCooldown = 150; 
-        let alienDirection = 1;
-        let baseAlienSpeed = 1.0;
-
-        // --- UI & Menu Logic ---
-        function updateCoinUI() {
-            document.getElementById('menu-coins').innerText = pData.coins;
-            document.getElementById('hud-coins').innerText = pData.coins;
-        }
-
-        function showMainMenu() {
-            gameState = 'menu';
-            updateCoinUI();
-            Object.values(screens).forEach(s => s.classList.add('hidden'));
-            hud.classList.add('hidden');
-            mobileUI.classList.add('hidden');
-            screens.main.classList.remove('hidden');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        document.getElementById('btn-start').onclick = initGame;
-        document.getElementById('btn-restart').onclick = initGame;
-        document.getElementById('btn-menu').onclick = showMainMenu;
-        document.getElementById('btn-quit').onclick = showMainMenu;
-        document.getElementById('btn-settings').onclick = () => {
-            screens.main.classList.add('hidden');
-            screens.settings.classList.remove('hidden');
-        };
-        document.getElementById('btn-back-settings').onclick = showMainMenu;
-        document.getElementById('btn-back-index').onclick = showMainMenu;
-        
-        document.getElementById('btn-toggle-mobile').onclick = (e) => {
-            isMobileMode = !isMobileMode;
-            e.target.innerText = `Mobile Mode: ${isMobileMode ? 'ON' : 'OFF'}`;
-        };
-
-        // --- Index / Shop Logic ---
-        document.getElementById('btn-index').onclick = () => {
-            screens.main.classList.add('hidden');
-            screens.index.classList.remove('hidden');
-            renderIndex('ships');
-        };
-
-        document.getElementById('tab-ships').onclick = (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-            e.target.classList.add('active');
-            renderIndex('ships');
-        };
-        document.getElementById('tab-enemies').onclick = (e) => {
-            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-            e.target.classList.add('active');
-            renderIndex('enemies');
-        };
-
-        function renderIndex(tab) {
-            const content = document.getElementById('index-content');
-            content.innerHTML = '';
-
-            if (tab === 'ships') {
-                shipData.forEach((ship, i) => {
-                    const isOwned = pData.shipsOwned[i];
-                    const isEquipped = pData.currentShip === i;
-                    
-                    let html = `<div class="card ${!isOwned ? 'mystery' : ''}">
-                        <div class="sprite sprite-ship${i}"></div>
-                        <div class="info"><b>${isOwned ? ship.name : '???'}</b><br>${isOwned ? ship.desc : 'Mystery Ship'}</div>`;
-                    
-                    if (isOwned) {
-                        html += `<button onclick="equipShip(${i})" ${isEquipped ? 'disabled' : ''}>
-                                    ${isEquipped ? 'EQUIPPED' : 'EQUIP'}
-                                 </button>`;
-                    } else {
-                        html += `<button onclick="buyShip(${i})" ${pData.coins < ship.price ? 'disabled' : ''}>
-                                    BUY (${ship.price}C)
-                                 </button>`;
-                    }
-                    html += `</div>`;
-                    content.innerHTML += html;
-                });
-            } else {
-                enemyData.forEach((enemy, i) => {
-                    const kills = pData.enemyKills[i];
-                    const discovered = kills > 0;
-                    
-                    content.innerHTML += `
-                        <div class="card ${!discovered ? 'mystery' : ''}">
-                            <div class="sprite sprite-enemy${i}"></div>
-                            <div class="info"><b>${discovered ? enemy.name : '???'}</b><br>
-                            ${discovered ? `HP: ${enemy.hp}<br>Kills: ${kills}` : 'Undiscovered'}</div>
-                        </div>`;
-                });
-            }
-        }
-
-        window.equipShip = (id) => { pData.currentShip = id; renderIndex('ships'); };
-        window.buyShip = (id) => {
-            if (pData.coins >= shipData[id].price) {
-                pData.coins -= shipData[id].price;
-                pData.shipsOwned[id] = true;
-                equipShip(id); // Auto equip
-                updateCoinUI();
-            }
-        };
-
-        // --- Controls ---
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = true;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = true;
-            if (e.key === ' ' || e.key === 'Spacebar') keys.fire = true;
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = false;
-            if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
-            if (e.key === ' ' || e.key === 'Spacebar') keys.fire = false;
-        });
-
-        function attachMobile(id, action) {
-            const btn = document.getElementById(id);
-            const p = (e) => { e.preventDefault(); keys[action] = true; };
-            const r = (e) => { e.preventDefault(); keys[action] = false; };
-            btn.addEventListener('touchstart', p, { passive: false });
-            btn.addEventListener('touchend', r, { passive: false });
-            btn.addEventListener('mousedown', p);
-            btn.addEventListener('mouseup', r);
-            btn.addEventListener('mouseleave', r);
-        }
-        attachMobile('btn-left', 'left'); attachMobile('btn-right', 'right'); attachMobile('btn-fire', 'fire');
-
-        // --- Game Logic ---
-        function createAliens() {
-            aliens = [];
-            alienDirection = 1;
-            
-            for (let row = 0; row < 5; row++) {
-                for (let col = 0; col < 8; col++) {
-                    // Spawn logic based on wave
-                    let typeId = 0; // default grunt
-                    if (wave > 1 && Math.random() < 0.2) typeId = 1; // 20% Tank
-                    if (wave > 2 && Math.random() < 0.2) typeId = 2; // 20% Speedster
-
-                    aliens.push({
-                        x: 20 + col * 45,
-                        y: 40 + row * 35,
-                        type: typeId,
-                        hp: enemyData[typeId].hp,
-                        w: enemyData[typeId].w,
-                        h: enemyData[typeId].h
-                    });
-                }
-            }
-        }
-
-        function initGame() {
-            Object.values(screens).forEach(s => s.classList.add('hidden'));
-            hud.classList.remove('hidden');
-            if (isMobileMode) mobileUI.classList.remove('hidden');
-            
-            score = 0;
-            wave = 1;
-            baseAlienSpeed = 1.0;
-            document.getElementById('score').innerText = score;
-            player.x = canvas.width / 2 - shipData[pData.currentShip].w / 2;
-            bullets = [];
-            keys.left = keys.right = keys.fire = false;
-            
-            createAliens();
-            gameState = 'playing';
-            updateCoinUI();
-            loop();
-        }
-
-        function gameOver() {
-            gameState = 'gameover';
-            cancelAnimationFrame(animationId);
-            mobileUI.classList.add('hidden');
-            hud.classList.add('hidden');
-            document.getElementById('go-score').innerText = score;
-            screens.gameOver.classList.remove('hidden');
-        }
-
-        function addScore(points) {
-            score += points;
-            document.getElementById('score').innerText = score;
-            
-            pData.scoreBank += points;
-            while(pData.scoreBank >= 100) {
-                pData.coins++;
-                pData.scoreBank -= 100;
-                updateCoinUI();
-            }
-        }
-
-        function fireBullets() {
-            const shipId = pData.currentShip;
-            const sData = shipData[shipId];
-            const pX = player.x + sData.w / 2;
-            
-            if (shipId === 0) {
-                // Classic
-                bullets.push({ x: pX - 2, y: player.y, w: 4, h: 10, speed: 7, vx: 0, power: 1, pierce: false });
-            } else if (shipId === 1) {
-                // Spreader
-                bullets.push({ x: pX - 2, y: player.y, w: 4, h: 10, speed: 7, vx: 0, power: 1, pierce: false });
-                bullets.push({ x: pX - 2, y: player.y, w: 4, h: 10, speed: 6, vx: -2, power: 1, pierce: false });
-                bullets.push({ x: pX - 2, y: player.y, w: 4, h: 10, speed: 6, vx: 2, power: 1, pierce: false });
-            } else if (shipId === 2) {
-                // Piercer
-                bullets.push({ x: pX - 4, y: player.y, w: 8, h: 25, speed: 12, vx: 0, power: 1, pierce: true, hitList: new Set() });
-            }
-            lastShotTime = Date.now();
-        }
-
-        function update() {
-            const sData = shipData[pData.currentShip];
-
-            if (keys.left && player.x > 0) player.x -= player.speed;
-            if (keys.right && player.x < canvas.width - sData.w) player.x += player.speed;
-
-            if (keys.fire && Date.now() - lastShotTime > fireCooldown) {
-                fireBullets();
-            }
-
-            // Bullets
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y -= bullets[i].speed;
-                bullets[i].x += bullets[i].vx;
-                if (bullets[i].y < -20 || bullets[i].x < 0 || bullets[i].x > canvas.width) {
-                    bullets.splice(i, 1);
-                }
-            }
-
-            // Aliens
-            let hitWall = false;
-            for (let a of aliens) {
-                const speed = baseAlienSpeed * enemyData[a.type].speedMult;
-                a.x += speed * alienDirection;
-                if (a.x <= 0 || a.x + a.w >= canvas.width) hitWall = true;
-            }
-
-            if (hitWall) {
-                alienDirection *= -1;
-                for (let a of aliens) {
-                    a.y += 25;
-                    if (a.y + a.h >= player.y) gameOver();
-                }
-            }
-
-            // Collisions
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                for (let j = aliens.length - 1; j >= 0; j--) {
-                    let b = bullets[i];
-                    let a = aliens[j];
-                    
-                    if (!b || !a) continue;
-
-                    // Check if pierce bullet already hit this specific alien
-                    if (b.pierce && b.hitList.has(a)) continue;
-
-                    if (b.x < a.x + a.w && b.x + b.w > a.x && b.y < a.y + a.h && b.y + b.h > a.y) {
-                        
-                        a.hp -= b.power;
-                        if (b.pierce) {
-                            b.hitList.add(a); // Record hit so it doesn't multi-hit per frame
-                        } else {
-                            bullets.splice(i, 1); // Non-pierce destroys bullet
-                        }
-
-                        if (a.hp <= 0) {
-                            pData.enemyKills[a.type]++;
-                            addScore(enemyData[a.type].score);
-                            aliens.splice(j, 1);
-                        }
-                        
-                        if (!b.pierce) break; // Break alien loop if bullet destroyed
-                    }
-                }
-            }
-
-            if (aliens.length === 0) {
-                wave++;
-                baseAlienSpeed += 0.3;
-                createAliens();
-            }
-        }
-
-        function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw Player
-            const shipId = pData.currentShip;
-            const sData = shipData[shipId];
-            ctx.fillStyle = sData.color;
-            ctx.beginPath();
-            if (shipId === 0) {
-                ctx.moveTo(player.x + sData.w / 2, player.y);
-                ctx.lineTo(player.x + sData.w, player.y + sData.h);
-                ctx.lineTo(player.x, player.y + sData.h);
-            } else if (shipId === 1) {
-                ctx.moveTo(player.x + sData.w / 2, player.y);
-                ctx.lineTo(player.x + sData.w * 0.8, player.y + sData.h);
-                ctx.lineTo(player.x + sData.w * 0.2, player.y + sData.h);
-            } else if (shipId === 2) {
-                ctx.moveTo(player.x + sData.w / 2, player.y);
-                ctx.lineTo(player.x + sData.w * 0.6, player.y + sData.h);
-                ctx.lineTo(player.x + sData.w * 0.4, player.y + sData.h);
-            }
-            ctx.fill();
-
-            // Draw Bullets
-            for (let b of bullets) {
-                ctx.fillStyle = b.pierce ? '#f0f' : '#ff0';
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-            }
-
-            // Draw Aliens
-            for (let a of aliens) {
-                ctx.fillStyle = enemyData[a.type].color;
-                
-                if (a.type === 0) { // Grunt (Square)
-                    ctx.fillRect(a.x, a.y, a.w, a.h);
-                } else if (a.type === 1) { // Tank (Wide Rectangle)
-                    ctx.fillRect(a.x, a.y, a.w, a.h);
-                    ctx.fillStyle = '#111'; // Detail
-                    ctx.fillRect(a.x+5, a.y+5, a.w-10, a.h-10);
-                } else if (a.type === 2) { // Speedster (Diamond-ish)
-                    ctx.beginPath();
-                    ctx.moveTo(a.x + a.w/2, a.y);
-                    ctx.lineTo(a.x + a.w, a.y + a.h/2);
-                    ctx.lineTo(a.x + a.w/2, a.y + a.h);
-                    ctx.lineTo(a.x, a.y + a.h/2);
-                    ctx.fill();
-                }
-            }
-        }
-
-        function loop() {
-            if (gameState !== 'playing') return;
-            update();
-            draw();
-            animationId = requestAnimationFrame(loop);
-        }
-        
-        // Init UI state
-        updateCoinUI();
-    </script>
+    <script src="game.js"></script>
 </body>
 </html>
